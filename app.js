@@ -27,6 +27,12 @@ const server = http.createServer(app);
 const io = socketIo(server); // < Interesting!
 
 let interval;
+let nbPlayerMax = 10;
+let PlayerPositions = new Array(nbPlayerMax);
+
+for (let i =0;i< nbPlayerMax;i++){
+  PlayerPositions[i] = 0;
+}
 
 io.on("connection", (socket) => {
   console.log("New client connected");
@@ -34,9 +40,21 @@ io.on("connection", (socket) => {
     clearInterval(interval);
   }
   interval = setInterval(() => getApiAndEmit(socket), 1000);
+
   socket.on("disconnect", () => {
     console.log("Client disconnected");
     clearInterval(interval);
+  });
+
+
+  socket.on("MovePlayer", (data) => {
+    if (data && data.player >= 0 && data.move){
+      //console.log("MovePlayer");
+      PlayerPositions[data.player] += data.move;
+      socket.emit("position change", {pos:PlayerPositions});
+    }else{
+      console.log("MovePlayer data empty");
+    }
   });
 });
 
