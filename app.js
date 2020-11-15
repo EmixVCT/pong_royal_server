@@ -34,8 +34,31 @@ for (let i =0;i< nbPlayerMax;i++){
   PlayerPositions[i] = 0;
 }
 
+let WaitingId = [];
+let games = {};
+let gameId = 0;
+
 io.on("connection", (socket) => {
   console.log("New client connected");
+  WaitingId.push(socket.id);
+  socket.join(socket.id);
+  socket.emit('waiting player',{n:WaitingId.length});
+  
+  console.log(WaitingId);
+
+  if(WaitingId.length == 3){
+    //start game
+    let pos = new Array(WaitingId.length);
+    for (let i =0;i< WaitingId.length;i++){pos[i] = 0;}
+
+    games[gameId] = {player:WaitingId,position:pos};
+    for (let i =0;i<WaitingId.length;i++){
+      io.to(WaitingId[i]).emit("start game",{id:gameId,position:pos,numPlayer:i});
+    }
+    WaitingId = [];
+    gameId++;
+  }
+  
   if (interval) {
     clearInterval(interval);
   }
@@ -43,19 +66,26 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Client disconnected");
+    WaitingId = WaitingId.filter(function(value, index, arr){ return value != socket.id;});
+    console.log(WaitingId);
     clearInterval(interval);
+    socket.emit('waiting player',{n:WaitingId.length});
   });
 
 
   socket.on("MovePlayer", (data) => {
-    if (data && data.player >= 0 && data.move){
-      //console.log("MovePlayer");
-      PlayerPositions[data.player] += data.move;
-      socket.emit("position change", {pos:PlayerPositions});
+    //console.log("move skt id:"+socket.id);
+    if (data && data.player >= 0 && data.move && data.gameId){
+      games[data.gameId].position[data.player] += data.move;
+      for (let i =0;i<games[data.gameId].player.length;i++){
+        io.to(games[data.gameId].player[i]).emit("position change", {pos:games[data.gameId].position});
+      }
     }else{
       console.log("MovePlayer data empty");
     }
   });
+
+
 });
 
 const getApiAndEmit = socket => {
