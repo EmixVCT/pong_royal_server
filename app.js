@@ -44,10 +44,6 @@ io.on("connection", (socket) => {
   socket.join(socket.id);
   socket.emit('waiting player',{n:WaitingId.length});
 
-  if (interval) {
-    clearInterval(interval);
-  }
-
   socket.on("player ready", (data) => {
     console.log("player ready");
     if (data && data.pseudo){
@@ -65,8 +61,10 @@ io.on("connection", (socket) => {
     }else if(WaitingId.length >= 3){
       console.log("set Timeout 20s");
       cooldown = 20;
-      if (!interval) {
+      if(!interval){
         interval = setInterval(() => getApiAndEmit(socket), 1000);
+      }else{
+        console.log("deja un interval");
       }
     }
   });
@@ -82,6 +80,7 @@ io.on("connection", (socket) => {
     WaitingId = WaitingId.filter(function(value, index, arr){ return value != socket.id;});
     console.log(WaitingId);
     clearInterval(interval);
+    interval = undefined;
     socket.emit('waiting player',{n:WaitingId.length});
   });
 
@@ -103,12 +102,13 @@ io.on("connection", (socket) => {
 
 const getApiAndEmit = socket => {
   cooldown--;
-  if(cooldown == 0){clearInterval(interval);startGame();}
+  if(cooldown == 0){clearInterval(interval);interval = undefined;startGame();cooldown = 20;}
   io.emit("FromAPI", cooldown);
 };
 
 const startGame = socket => {
   clearInterval(interval);
+  interval = undefined;
 
   let pos = new Array(WaitingId.length);
   for (let i =0;i< WaitingId.length;i++){pos[i] = 0;}
