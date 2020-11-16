@@ -27,6 +27,7 @@ const server = http.createServer(app);
 const io = socketIo(server); // < Interesting!
 
 let interval;
+let cooldown = 20;
 let nbPlayerMax = 10;
 let PlayerPositions = new Array(nbPlayerMax);
 
@@ -36,33 +37,45 @@ for (let i =0;i< nbPlayerMax;i++){
 
 let WaitingId = [];
 let games = {};
-let gameId = 0;
+let gameId = 1;
 
 io.on("connection", (socket) => {
   console.log("New client connected");
-  WaitingId.push(socket.id);
   socket.join(socket.id);
   socket.emit('waiting player',{n:WaitingId.length});
-  
-  console.log(WaitingId);
 
-  if(WaitingId.length == 3){
-    //start game
-    let pos = new Array(WaitingId.length);
-    for (let i =0;i< WaitingId.length;i++){pos[i] = 0;}
-
-    games[gameId] = {player:WaitingId,position:pos};
-    for (let i =0;i<WaitingId.length;i++){
-      io.to(WaitingId[i]).emit("start game",{id:gameId,position:pos,numPlayer:i});
-    }
-    WaitingId = [];
-    gameId++;
-  }
-  
   if (interval) {
     clearInterval(interval);
   }
-  interval = setInterval(() => getApiAndEmit(socket), 1000);
+
+  socket.on("player ready", (data) => {
+    console.log("player ready");
+    if (data && data.pseudo){
+      console.log(data.pseudo + " is ready");
+    }else{
+      console.log("Anonymous is ready");
+    }
+    WaitingId.push(socket.id);
+    io.emit('waiting player',{n:WaitingId.length});
+    console.log(WaitingId);
+
+    if(WaitingId.length == 10){
+      //start game
+      startGame();
+    }else if(WaitingId.length >= 3){
+      console.log("set Timeout 20s");
+      cooldown = 20;
+      if (!interval) {
+        interval = setInterval(() => getApiAndEmit(socket), 1000);
+      }
+    }
+  });
+
+  
+
+  
+  
+  
 
   socket.on("disconnect", () => {
     console.log("Client disconnected");
@@ -89,9 +102,23 @@ io.on("connection", (socket) => {
 });
 
 const getApiAndEmit = socket => {
-  const response = new Date();
-  // Emitting a new message. Will be consumed by the client
-  socket.emit("FromAPI", response);
+  cooldown--;
+  if(cooldown == 0){clearInterval(interval);startGame();}
+  io.emit("FromAPI", cooldown);
 };
+
+const startGame = socket => {
+  clearInterval(interval);
+
+  let pos = new Array(WaitingId.length);
+  for (let i =0;i< WaitingId.length;i++){pos[i] = 0;}
+
+  games[gameId] = {player:WaitingId,position:pos};
+  for (let i =0;i<WaitingId.length;i++){
+    io.to(WaitingId[i]).emit("start game",{id:gameId,position:pos,numPlayer:i});
+  }
+  WaitingId = [];
+  gameId++;
+}
 
 server.listen(port, () => console.log(`Listening on port ${port}`));
