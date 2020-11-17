@@ -7,6 +7,7 @@ const index = require("./index.js");
 
 var geometry = require('./geometry');
 
+
 const app = express();
 app.use(index);
 // Add headers
@@ -41,7 +42,7 @@ let WaitingId = [];
 let games = {};
 let gameId = 1;
 
-const decelerationRatio = 0.99; // ball decelerate of 1% if no hit
+const decelerationRatio = 0.999; // ball decelerate of 1% if no hit
 const delta = 1000/24;             // fps
 
 
@@ -113,9 +114,7 @@ io.on("connection", (socket) => {
 
 function loop(game,iball) {
 
-  if (!geometry.isInside(games[game].balls[iball].pos, games[game].arena)) {
-      return geometry.getLooser(games[game].balls[iball], games[game].arena);
-  }
+  let hashit = false;
 
   games[game].balls[iball].acceleration[0] = games[game].balls[iball].acceleration[0] * decelerationRatio;
   games[game].balls[iball].acceleration[1] = games[game].balls[iball].acceleration[1] * decelerationRatio;
@@ -127,8 +126,8 @@ function loop(game,iball) {
       let x2 = games[game].arena[j][0], y2 = games[game].arena[j][1];
       
 
-      if ( geometry.checkHit(games[game].balls[iball], games[game].position[i], [[x1, y1], [x2, y2]]) ) {
-          
+      if ( geometry.checkHit(games[game].balls[iball], games[game].position[i], games[game].barWidth, [[x1, y1], [x2, y2]]) ) {
+          hashit = true;
           // J'ai un peu tricks avec un peu de chance ça marche
           games[game].balls[iball].acceleration[0] = 2 * (x1 - x2) - games[game].balls[iball].acceleration[0]
           games[game].balls[iball].acceleration[1] = 2 * (y1 - y2) - games[game].balls[iball].acceleration[1]
@@ -138,9 +137,15 @@ function loop(game,iball) {
 
   games[game].balls[iball].prevpos = games[game].balls[iball].pos;
   console.log(games[game].balls[iball]);
-  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/1000);
-  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/1000);
+  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/100000);
+  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/100000);
   console.log(games[game].balls[iball]);
+
+  if (!hashit){
+    if (!geometry.isInside(games[game].balls[iball].pos, games[game].arena)) {
+      return geometry.getLooser(games[game].balls[iball], games[game].arena);
+    }
+  }
   
 }
 
@@ -185,6 +190,10 @@ const getApiAndEmit = socket => {
 
 
 
+function random(low, high) {
+  return Math.random() * (high - low) + low
+}
+
 const startGame = socket => {
   clearInterval(interval);
   interval = undefined;
@@ -214,8 +223,8 @@ const startGame = socket => {
   //generate ball
 
   let balls = [];
-  for (let i=0;i<1;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [Math.random(), Math.random()]});
+  for (let i=0;i<2;i++){
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [random(-1,1) , random(-1,1) ]});
   }
 
   games[gameId] = {player:players,
