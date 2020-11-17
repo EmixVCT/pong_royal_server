@@ -78,6 +78,14 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("generate game", (data) => {
+    console.log("game generate");
+    WaitingId.push(socket.id);
+    
+    startGameExemple();
+   
+  });
+
   
 
   
@@ -135,17 +143,19 @@ function loop(game,iball) {
       }
   }
 
-  games[game].balls[iball].prevpos = games[game].balls[iball].pos;
-  console.log(games[game].balls[iball]);
-  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/100000);
-  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/100000);
-  console.log(games[game].balls[iball]);
-
   if (!hashit){
     if (!geometry.isInside(games[game].balls[iball].pos, games[game].arena)) {
       return geometry.getLooser(games[game].balls[iball], games[game].arena);
     }
   }
+
+  games[game].balls[iball].prevpos = games[game].balls[iball].pos;
+  console.log(games[game].balls[iball]);
+  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/100);
+  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/100);
+  console.log(games[game].balls[iball]);
+
+  
   
 }
 
@@ -224,7 +234,63 @@ const startGame = socket => {
 
   let balls = [];
   for (let i=0;i<2;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [random(-1,1) , random(-1,1) ]});
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [1,1]});
+  }
+
+  games[gameId] = {player:players,
+    position:pos,
+    arena:arena,
+    limitMax:limitMax,
+    limitMin:limitMin,
+    SpeedPlayer:SpeedPlayer,
+    barWidth:barWidth,
+    balls:balls,
+  };
+
+  for (let i =0;i<nbPlayer;i++){
+    io.to(players[i]).emit("start game",{
+      id:gameId,
+      position:pos,
+      numPlayer:i,
+      arena:arena,
+      barWidth:barWidth,
+      balls:balls,
+    });
+  }
+  gameId++;
+}
+
+const startGameExemple = socket => {
+  clearInterval(interval);
+  interval = undefined;
+
+  //clear waiting list
+  let nbPlayer = 3;
+  let players = WaitingId;
+  WaitingId = [];
+
+  //Generate position player
+  let pos = new Array(nbPlayer);
+  for (let i =0;i< nbPlayer;i++){pos[i] = 0;}
+
+  //Generate property of board
+  let r = 400;
+  let arena = new Array(nbPlayer);
+  for(let i=0; i<nbPlayer;i++){
+    arena[i] = [r * Math.cos(2*Math.PI*(i+1)/nbPlayer),r * Math.sin(2*Math.PI*(i+1)/nbPlayer)];
+  }
+  let widthSide = Math.sqrt(Math.pow(arena[1][0]-arena[0][0],2)+Math.pow(arena[1][1]-arena[0][1],2));
+  let barWidth = widthSide/8;
+  let SpeedPlayer = widthSide/30;
+
+  let limitMax = widthSide/2;
+  let limitMin = -widthSide/2+barWidth;
+
+  //generate ball
+
+  let balls = [];
+  for (let i=0;i<2;i++){
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [1,1]});
   }
 
   games[gameId] = {player:players,
