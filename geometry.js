@@ -1,13 +1,66 @@
 
-let ball = {pos: [2, 3.2], vect: [0, 1]}
-let poly = [ [ 1, 1 ], [ 1, 3 ], [ 3, 3 ], [ 3, 1 ] ];
+let ball = {pos: [2, 3.2], prevpos: [2, 2.9] acceleration: [0, 1]}
+let arena = [ [ 1, 1 ], [ 1, 3 ], [ 3, 3 ], [ 3, 1 ] ];
 
-console.log( isInside(ball.pos, poly) ? "ball is in" : "ball is out")
+console.log( isInside(ball.pos, arena) ? "ball is in" : "ball is out")
 
-if (!isInside(ball.pos, poly)){
-	console.log("looser is", getLooser(ball, poly) )
+if (!isInside(ball.pos, arena)){
+	console.log("looser is", getLooser(ball, arena) )
 }
 
+const decelerationRatio = 0.99; // ball decelerate of 1% if no hit
+const delta = 1/24;             // fps
+
+function loop(ball, arena) {
+
+    if (!isInside(ball, arena)) {
+        return getLooser(ball, arena);
+    }
+
+    ball.acceleration[0] = ball.acceleration[0] * decelerationRatio;
+    ball.acceleration[1] = ball.acceleration[1] * decelerationRatio;
+
+    // Check for hit
+    for (let i = 0, j = shape.length - 1; i < shape.length; j = i++) {
+
+        let x1 = shape[i][0], y1 = shape[i][1];
+        let x2 = shape[j][0], y2 = shape[j][1];
+        
+
+        if ( checkHit(ball, position[i], [[x1, y1], [x2, y2]]) ) {
+            
+            // J'ai un peu tricks avec un peu de chance ça marche
+            ball.acceleration[0] = 2 * (x1 - x2) - ball.acceleration[0]
+            ball.acceleration[1] = 2 * (y1 - y2) - ball.acceleration[1]
+
+        }
+    }
+
+    ball.prevpos = ball.pos;
+    ball.pos[0] += ball.acceleration.x * delta;
+    ball.pos[1] += ball.acceleration.y * delta;
+    
+}
+
+function checkHit(ball, playerPosition, playerAxis) {
+
+    /*
+    *   Apply both the points on given line equation and check if 
+    *   the obtained values belong to same parity or not
+    */
+
+    let a = playerAxis[0][0] - playerAxis[1][0]
+    let b = playerAxis[0][1] - playerAxis[1][1]
+
+    let fx1 =  * ball.prevpos[0] + b * ball.prevpos[1]; 
+    let fx2 = a * ball.pos[0] + b * ball.pos[1]; 
+  
+    // If fx1 and fx2 have same sign 
+    if ((fx1 * fx2) > 0) 
+        return false; 
+  
+    return true; 
+}
 
 function isInside(point, shape) {
     // ray-casting algorithm based on
