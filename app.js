@@ -81,7 +81,7 @@ io.on("connection", (socket) => {
   socket.on("generate game", (data) => {
     console.log("game generate");
     WaitingId.push(socket.id);
-    
+
     startGameExemple();
    
   });
@@ -151,8 +151,8 @@ function loop(game,iball) {
 
   games[game].balls[iball].prevpos = games[game].balls[iball].pos;
   console.log(games[game].balls[iball]);
-  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/100);
-  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/100);
+  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/1000);
+  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/1000);
   console.log(games[game].balls[iball]);
 
   
@@ -234,7 +234,7 @@ const startGame = socket => {
 
   let balls = [];
   for (let i=0;i<2;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [1,1]});
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [40,40]});
   }
 
   games[gameId] = {player:players,
@@ -290,7 +290,7 @@ const startGameExemple = socket => {
 
   let balls = [];
   for (let i=0;i<2;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [1,1]});
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [40,40]});
   }
 
   games[gameId] = {player:players,
