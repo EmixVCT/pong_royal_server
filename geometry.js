@@ -74,7 +74,7 @@ module.exports = {
         }
 
         let ua = ((playerAxis[1][0] - playerAxis[0][0]) * (ball.pos[1] - playerAxis[0][1]) - (playerAxis[1][1] - playerAxis[0][1]) * (ball.pos[0] - playerAxis[0][0])) / denominator
-        let ub = ((ball.prevpos[0] - ball.pos[0]) * (ball.pos[1] - playerAxis[0][1]) - (ball.prevpos[2] - ball.pos[1]) * (ball.pos[0] - x3)) / denominator
+        let ub = ((ball.prevpos[0] - ball.pos[0]) * (ball.pos[1] - playerAxis[0][1]) - (ball.prevpos[2] - ball.pos[1]) * (ball.pos[0] - playerAxis[0][0])) / denominator
 
         if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
             return false
