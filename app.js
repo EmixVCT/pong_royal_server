@@ -113,7 +113,7 @@ io.on("connection", (socket) => {
 
 function loop(game,iball) {
 
-  if (!geometry.isInside(games[game].balls[iball], games[game].arena)) {
+  if (!geometry.isInside(games[game].balls[iball].pos, games[game].arena)) {
       return geometry.getLooser(games[game].balls[iball], games[game].arena);
   }
 
@@ -121,13 +121,13 @@ function loop(game,iball) {
   games[game].balls[iball].acceleration[1] = games[game].balls[iball].acceleration[1] * decelerationRatio;
 
   // Check for hit
-  for (let i = 0, j = shape.length - 1; i < shape.length; j = i++) {
+  for (let i = 0, j = games[game].arena.length - 1; i < games[game].arena.length; j = i++) {
 
-      let x1 = shape[i][0], y1 = shape[i][1];
-      let x2 = shape[j][0], y2 = shape[j][1];
+      let x1 = games[game].arena[i][0], y1 = games[game].arena[i][1];
+      let x2 = games[game].arena[j][0], y2 = games[game].arena[j][1];
       
 
-      if ( geometry.checkHit(games[game].balls[iball], position[i], [[x1, y1], [x2, y2]]) ) {
+      if ( geometry.checkHit(games[game].balls[iball], games[game].position[i], [[x1, y1], [x2, y2]]) ) {
           
           // J'ai un peu tricks avec un peu de chance ça marche
           games[game].balls[iball].acceleration[0] = 2 * (x1 - x2) - games[game].balls[iball].acceleration[0]
@@ -137,8 +137,10 @@ function loop(game,iball) {
   }
 
   games[game].balls[iball].prevpos = games[game].balls[iball].pos;
-  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration.x * (delta);
-  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration.y * (delta);
+  console.log(games[game].balls[iball]);
+  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/1000);
+  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/1000);
+  console.log(games[game].balls[iball]);
   
 }
 
@@ -212,7 +214,7 @@ const startGame = socket => {
   //generate ball
 
   let balls = [];
-  for (let i=0;i<2;i++){
+  for (let i=0;i<1;i++){
     balls.push({pos: [0,0], prevpos: [0,0], acceleration: [Math.random(), Math.random()]});
   }
 
