@@ -5,6 +5,8 @@ const socketIo = require("socket.io");
 const port = process.env.PORT || 4001;
 const index = require("./index.js");
 
+var geometry = require('./geometry');
+
 const app = express();
 app.use(index);
 // Add headers
@@ -39,6 +41,10 @@ let WaitingId = [];
 let games = {};
 let gameId = 1;
 
+const decelerationRatio = 0.99; // ball decelerate of 1% if no hit
+const delta = 1000/24;             // fps
+
+
 io.on("connection", (socket) => {
 
 
@@ -62,7 +68,7 @@ io.on("connection", (socket) => {
       startGame();
     }else if(WaitingId.length >= 3){
       console.log("set Timeout 20s");
-      cooldown = 10;
+      cooldown = 1;
       if(!interval){
         interval = setInterval(() => getApiAndEmit(socket), 1000);
       }else{
@@ -104,18 +110,55 @@ io.on("connection", (socket) => {
 
 });
 
+
+function loop(game,iball) {
+
+  if (!geometry.isInside(games[game].balls[iball], games[game].arena)) {
+      return geometry.getLooser(games[game].balls[iball], games[game].arena);
+  }
+
+  games[game].balls[iball].acceleration[0] = games[game].balls[iball].acceleration[0] * decelerationRatio;
+  games[game].balls[iball].acceleration[1] = games[game].balls[iball].acceleration[1] * decelerationRatio;
+
+  // Check for hit
+  for (let i = 0, j = shape.length - 1; i < shape.length; j = i++) {
+
+      let x1 = shape[i][0], y1 = shape[i][1];
+      let x2 = shape[j][0], y2 = shape[j][1];
+      
+
+      if ( geometry.checkHit(games[game].balls[iball], position[i], [[x1, y1], [x2, y2]]) ) {
+          
+          // J'ai un peu tricks avec un peu de chance ça marche
+          games[game].balls[iball].acceleration[0] = 2 * (x1 - x2) - games[game].balls[iball].acceleration[0]
+          games[game].balls[iball].acceleration[1] = 2 * (y1 - y2) - games[game].balls[iball].acceleration[1]
+
+      }
+  }
+
+  games[game].balls[iball].prevpos = games[game].balls[iball].pos;
+  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration.x * (delta);
+  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration.y * (delta);
+  
+}
+
+
 const update = () => {
   let gameEnd = true;
   let socketList = io.sockets.adapter.rooms;
   let todelete = [];
-
+  let b,i;
   for (const game in games) {
     gameEnd = true;
-    for (let i=0 ;i< games[game].player.length;i++){
+    for (i=0 ;i< games[game].player.length;i++){
       if(socketList.has(games[game].player[i])){
         gameEnd = false;
 
-        io.to(games[game].player[i]).volatile.emit('Update game', {ballePosition:[{x:0,y:50},{x:0,y:-32},{x:43,y:0}],pos:games[game].position});
+        for( b=0;b<games[game].balls.length;b++){
+          loop(game,b);
+        }
+
+        io.to(games[game].player[i]).volatile.emit('Update game', {balls:games[game].balls,pos:games[game].position});
       }
     }
     if(gameEnd){
@@ -129,7 +172,7 @@ const update = () => {
   //io.volatile.emit('players list', Object.values(players));
 }
 
-setInterval(update, 1000/24); // 1000/60 = 60FPS
+setInterval(update, delta); // 1000/60 = 60FPS
 
 
 const getApiAndEmit = socket => {
@@ -155,27 +198,32 @@ const startGame = socket => {
 
   //Generate property of board
   let r = 400;
-  x = new Array(nbPlayer);
-  y = new Array(nbPlayer);
+  let arena = new Array(nbPlayer);
   for(let i=0; i<nbPlayer;i++){
-    x[i] = r * Math.cos(2*Math.PI*(i+1)/nbPlayer)
-    y[i] = r * Math.sin(2*Math.PI*(i+1)/nbPlayer)
+    arena[i] = [r * Math.cos(2*Math.PI*(i+1)/nbPlayer),r * Math.sin(2*Math.PI*(i+1)/nbPlayer)];
   }
-  let widthSide = Math.sqrt(Math.pow(x[1]-x[0],2)+Math.pow(y[1]-y[0],2));
+  let widthSide = Math.sqrt(Math.pow(arena[1][0]-arena[0][0],2)+Math.pow(arena[1][1]-arena[0][1],2));
   let barWidth = widthSide/8;
   let SpeedPlayer = widthSide/30;
 
   let limitMax = widthSide/2;
   let limitMin = -widthSide/2+barWidth;
 
+  //generate ball
+
+  let balls = [];
+  for (let i=0;i<2;i++){
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [Math.random(), Math.random()]});
+  }
+
   games[gameId] = {player:players,
     position:pos,
-    x:x,
-    y:y,
+    arena:arena,
     limitMax:limitMax,
     limitMin:limitMin,
     SpeedPlayer:SpeedPlayer,
-    barWidth:barWidth
+    barWidth:barWidth,
+    balls:balls,
   };
 
   for (let i =0;i<nbPlayer;i++){
@@ -183,9 +231,9 @@ const startGame = socket => {
       id:gameId,
       position:pos,
       numPlayer:i,
-      x:x,
-      y:y,
+      arena:arena,
       barWidth:barWidth,
+      balls:balls,
     });
   }
   gameId++;
