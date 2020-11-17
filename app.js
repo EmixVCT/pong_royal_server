@@ -105,8 +105,9 @@ io.on("connection", (socket) => {
   socket.on("MovePlayer", (data) => {
     //console.log("move skt id:"+socket.id);
     if (data && data.player >= 0 && data.move && data.gameId && games[data.gameId] &&
-      games[data.gameId].position[data.player]+data.move*games[data.gameId].SpeedPlayer <= games[data.gameId].limitMax &&
-      games[data.gameId].position[data.player]+data.move*games[data.gameId].SpeedPlayer >= games[data.gameId].limitMin){
+      games[data.gameId].position[data.player]+data.move*games[data.gameId].SpeedPlayer <= games[data.gameId].limitMax-games[data.gameId].barWidth/2 &&
+      games[data.gameId].position[data.player]+data.move*games[data.gameId].SpeedPlayer >= games[data.gameId].limitMin-games[data.gameId].barWidth/2
+      ){
 
       games[data.gameId].position[data.player] += data.move*games[data.gameId].SpeedPlayer;
       /*
@@ -234,7 +235,7 @@ const startGame = socket => {
 
   let balls = [];
   for (let i=0;i<2;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [40,40]});
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [80,80]});
   }
 
   games[gameId] = {player:players,
@@ -289,8 +290,8 @@ const startGameExemple = socket => {
   //generate ball
 
   let balls = [];
-  for (let i=0;i<2;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [40,40]});
+  for (let i=0;i<1;i++){
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [80 ,0]});
   }
 
   games[gameId] = {player:players,
