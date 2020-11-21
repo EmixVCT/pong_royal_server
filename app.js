@@ -43,6 +43,7 @@ let games = {};
 let gameId = 1;
 
 const decelerationRatio = 0.999; // ball decelerate of 1% if no hit
+const accelerationRatio = 1.5; // ball decelerate of 1% if no hit
 const delta = 1000/24;             // fps
 
 
@@ -140,21 +141,36 @@ function loop(game,iball) {
           // J'ai un peu tricks avec un peu de chance ça marche
           games[game].balls[iball].acceleration[0] = 2 * (x1 - x2) - games[game].balls[iball].acceleration[0]
           games[game].balls[iball].acceleration[1] = 2 * (y1 - y2) - games[game].balls[iball].acceleration[1]
-
+          console.log("Ca a hit");
       }
   }
 
+  //temporaire{}
+  if (!geometry.isInside2(games[game].balls[iball].pos, games[game].arena)) {
+
+    let Ax = games[game].balls[iball].acceleration[0];
+    let Ay = games[game].balls[iball].acceleration[1];
+
+    games[game].balls[iball].acceleration[0] = -Ax;
+    games[game].balls[iball].acceleration[1] = -Ay;
+
+    console.log("Ca a hit (pour de faux)");
+    console.log(JSON.stringify(games[game].balls[iball].acceleration));
+    hashit = true;
+  }
+
   if (!hashit){
-    if (!geometry.isInside(games[game].balls[iball].pos, games[game].arena)) {
+    if (!geometry.isInside2(games[game].balls[iball].pos, games[game].arena)) {
       return geometry.getLooser(games[game].balls[iball], games[game].arena);
     }
   }
+  
 
   games[game].balls[iball].prevpos = games[game].balls[iball].pos;
-  console.log(games[game].balls[iball]);
-  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/1000);
-  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/1000);
-  console.log(games[game].balls[iball]);
+  //console.log(games[game].balls[iball]);
+  games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/100);
+  games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/100);
+  //console.log(games[game].balls[iball]);
 
   
   
@@ -261,12 +277,15 @@ const startGame = socket => {
   gameId++;
 }
 
+
+
+
 const startGameExemple = socket => {
   clearInterval(interval);
   interval = undefined;
 
   //clear waiting list
-  let nbPlayer = 3;
+  let nbPlayer = 5;
   let players = WaitingId;
   WaitingId = [];
 
@@ -291,7 +310,7 @@ const startGameExemple = socket => {
 
   let balls = [];
   for (let i=0;i<1;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [80 ,0]});
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [30 ,-10]});
   }
 
   games[gameId] = {player:players,

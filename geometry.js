@@ -110,9 +110,39 @@ module.exports = {
 
             if (intersect) inside = !inside;
         }
-        console.log("[isInside] -> "+inside);
+        //console.log("[isInside] -> "+inside);
         
         return inside;
+    },
+    isInside2: function (p, polygon) {
+        
+        var isInside = false;
+        var minX = polygon[0][0], maxX = polygon[0][0];
+        var minY = polygon[0][1], maxY = polygon[0][1];
+        for (var n = 1; n < polygon.length; n++) {
+            var q = polygon[n];
+            minX = Math.min(q[0], minX);
+            maxX = Math.max(q[0], maxX);
+            minY = Math.min(q[1], minY);
+            maxY = Math.max(q[1], maxY);
+        }
+
+        if (p[0] < minX || p[0] > maxX || p[1] < minY || p[1] > maxY) {
+            return false;
+        }
+
+        var i = 0, j = polygon.length - 1;
+        for (i, j; i < polygon.length; j = i++) {
+            if ( (polygon[i][1] > p[1]) != (polygon[j][1] > p[1]) &&
+                    p[0] < (polygon[j][0] - polygon[i][0]) * (p[1] - polygon[i][1]) / (polygon[j][1] - polygon[i][1]) + polygon[i][0] ) {
+                isInside = !isInside;   
+            }
+        }
+
+        return isInside;
+    },
+    getAlpha: function getAlpha(xa,xb,ya,yb){
+      return Math.atan2((ya-yb),(xa-xb))+Math.PI;
     },
     getLooser: function (ball, shape) {
 
@@ -129,7 +159,7 @@ module.exports = {
             distances[i] = Math.abs( (y2 - y1)*ball.pos[0] - (x2 - x1)*ball.pos[1] + x2*y1 - y2*x1 ) / Math.sqrt((y2-y1)*(y2-y1) + (x2-x1)*(x2-x1))
         }
 
-        console.log("[getLooser] -> ", distances);
+        //console.log("[getLooser] -> ", distances);
 
         let res = {
             index: 0,
