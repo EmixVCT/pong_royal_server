@@ -282,8 +282,10 @@ const startGame = socket => {
   //generate ball
 
   let balls = [];
-  for (let i=0;i<2;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [20,20],lasthit:-1});
+  for (let i=0;i<5;i++){
+    let vx = getRandomInt(40);
+    let vy = 40 - vx;
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [randomSign(vx) ,randomSign(vy)],lasthit:-1});
   }
 
   games[gameId] = {player:players,
