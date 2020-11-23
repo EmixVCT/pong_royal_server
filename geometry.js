@@ -68,11 +68,17 @@ module.exports = {
         let xball = ball.pos[0]*Math.cos(-alpha) - ball.pos[1]*Math.sin(-alpha);
         let yball = ball.pos[0]*Math.sin(-alpha) - ball.pos[1]*Math.cos(-alpha);
 
-        //console.log("xball :"+xball+" yball :"+yball);
+        //console.log("yball :"+yball);
+        //console.log("xball :"+xball+" playerPosition: "+playerPosition);
 
-        if (yball < ya2+15 && yball > ya2-15 ){
-            console.log("HIIIIIIIIIIIIT");
+        if (yball < ya2+15 && yball > ya2-15 && -xball > playerPosition-playerSize/2 && -xball < playerPosition+playerSize/2){
+            //console.log("HIIIIIIIIIIIIT");
             return true;
+        }if (yball < ya2+15 && yball > ya2-15){
+            //console.log("pas sur le plateau");
+            //console.log("xball :"+xball+" playerPosition: "+playerPosition);
+
+            return false;
         }
         return false;
     },
