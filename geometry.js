@@ -44,6 +44,38 @@ module.exports = {
         ball.pos[1] += ball.acceleration.y * (delta/1000);
         
     },
+    checkHit2: function (ball, playerPosition, playerSize, playerAxis) {
+        let xa = playerAxis[0][0];
+        let xb = playerAxis[1][0];
+        let ya = playerAxis[0][1];
+        let yb = playerAxis[1][1];
+        let alpha = Math.atan2((ya-yb),(xa-xb))+Math.PI;
+
+        //console.log(alpha);
+
+        //rotation repère 
+        let xa2 = xa*Math.cos(-alpha) - ya*Math.sin(-alpha);
+        let ya2 = xa*Math.sin(-alpha) + ya*Math.cos(-alpha);
+
+        let xb2 = xb*Math.cos(-alpha) - yb*Math.sin(-alpha);
+        let yb2 = xb*Math.sin(-alpha) + yb*Math.cos(-alpha);
+
+        /*console.log("xa :"+xa+" ya :"+ya);
+        console.log("xb :"+xb+" yb :"+yb);
+        console.log("xa :"+xa2+" ya :"+ya2);
+        console.log("xb :"+xb2+" yb :"+yb2);*/
+
+        let xball = ball.pos[0]*Math.cos(-alpha) - ball.pos[1]*Math.sin(-alpha);
+        let yball = ball.pos[0]*Math.sin(-alpha) - ball.pos[1]*Math.cos(-alpha);
+
+        //console.log("xball :"+xball+" yball :"+yball);
+
+        if (yball < ya2+15 && yball > ya2-15 ){
+            console.log("HIIIIIIIIIIIIT");
+            return true;
+        }
+        return false;
+    },
     checkHit: function (ball, playerPosition, playerSize, playerAxis) {
 
         /*
@@ -57,34 +89,45 @@ module.exports = {
         let fx1 = a * ball.prevpos[0] + b * ball.prevpos[1]; 
         let fx2 = a * ball.pos[0] + b * ball.pos[1];
       
+        //console.log("fx1 :"+fx1+" fx2 :"+fx2);
+
         // If fx1 and fx2 have same sign 
-        if ((fx1 * fx2) > 0) 
-            return false; 
-      
+        //if ((fx1 * fx2) > 0) 
+        //    return false; 
 
-
-        if ((ball.pos[0] === ball.prevpos[0] && ball.pos[1] === ball.prevpos[2]) || (playerAxis[0][0] === playerAxis[1][0] && playerAxis[0][1] === playerAxis[1][1])) {
+        if ((ball.pos[0] === ball.prevpos[0] && ball.pos[1] === ball.prevpos[1]) || (playerAxis[0][0] === playerAxis[1][0] && playerAxis[0][1] === playerAxis[1][1])) {
             return false
         }
 
-        denominator = ((playerAxis[1][1] - playerAxis[0][1]) * (ball.prevpos[0] - ball.pos[0]) - (playerAxis[1][0] - playerAxis[0][0]) * (ball.prevpos[2] - ball.pos[1]))
+
+        denominator = ((playerAxis[1][1] - playerAxis[0][1]) * (ball.prevpos[0] - ball.pos[0]) - (playerAxis[1][0] - playerAxis[0][0]) * (ball.prevpos[1] - ball.pos[1]))
+
+        //console.log("denominator : "+denominator);
 
         if (denominator === 0) {
             return false
         }
 
+
         let ua = ((playerAxis[1][0] - playerAxis[0][0]) * (ball.pos[1] - playerAxis[0][1]) - (playerAxis[1][1] - playerAxis[0][1]) * (ball.pos[0] - playerAxis[0][0])) / denominator
-        let ub = ((ball.prevpos[0] - ball.pos[0]) * (ball.pos[1] - playerAxis[0][1]) - (ball.prevpos[2] - ball.pos[1]) * (ball.pos[0] - playerAxis[0][0])) / denominator
+        let ub = ((ball.prevpos[0] - ball.pos[0]) * (ball.pos[1] - playerAxis[0][1]) - (ball.prevpos[1] - ball.pos[1]) * (ball.pos[0] - playerAxis[0][0])) / denominator
+
+        //console.log("ua : "+ ua);
+        //console.log("ub : "+ ub);
 
         if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
-            return false
+            //return false
         }
+     
 
         let x = ball.pos[0] + ua * (ball.prevpos[0] - ball.pos[0])
-        let y = ball.pos[1] + ua * (ball.prevpos[2] - ball.pos[1])
+        let y = ball.pos[1] + ua * (ball.prevpos[1] - ball.pos[1])
 
         let playerX = (playerAxis[0][0] - playerAxis[1][0]) / 2
         let playerY = (playerAxis[0][1] - playerAxis[1][1]) / 2
+
+        //console.log(" x: "+x+" y: "+y);
+        //console.log(" playerX: "+playerX+" playerY: "+playerY);
 
         if ((x > playerX - playerSize/2 && x < playerX + playerSize/2) && (y > playerY - playerSize/2 && y < playerY + playerSize/2))
             return true; 

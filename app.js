@@ -43,7 +43,7 @@ let games = {};
 let gameId = 1;
 
 const decelerationRatio = 0.999; // ball decelerate of 1% if no hit
-const accelerationRatio = 1.5; // ball decelerate of 1% if no hit
+const accelerationRatio = 1.05; // ball decelerate of 1% if no hit
 const delta = 1000/24;             // fps
 
 
@@ -121,6 +121,23 @@ io.on("connection", (socket) => {
 
 });
 
+function multiply(a, b) {
+
+  let aNumRows = a.length, aNumCols = a[0].length,
+      bNumRows = b.length, bNumCols = b[0].length,
+      m = new Array(aNumRows);  // initialize array of rows
+
+  for (let r = 0; r < aNumRows; ++r) {
+    m[r] = new Array(bNumCols); // initialize the current row
+    for (let c = 0; c < bNumCols; ++c) {
+      m[r][c] = 0;             // initialize the current cell
+      for (let i = 0; i < aNumCols; ++i) {
+        m[r][c] += a[r][i] * b[i][c];
+      }
+    }
+  }
+  return m;
+}
 
 function loop(game,iball) {
 
@@ -136,28 +153,54 @@ function loop(game,iball) {
       let x2 = games[game].arena[j][0], y2 = games[game].arena[j][1];
       
 
-      if ( geometry.checkHit(games[game].balls[iball], games[game].position[i], games[game].barWidth, [[x1, y1], [x2, y2]]) ) {
+      if (games[game].balls[iball].lasthit != i && geometry.checkHit2(games[game].balls[iball], games[game].position[i], games[game].barWidth, [[x1, y1], [x2, y2]]) ) {
           hashit = true;
+          games[game].balls[iball].lasthit = i;
           // J'ai un peu tricks avec un peu de chance ça marche
-          games[game].balls[iball].acceleration[0] = 2 * (x1 - x2) - games[game].balls[iball].acceleration[0]
-          games[game].balls[iball].acceleration[1] = 2 * (y1 - y2) - games[game].balls[iball].acceleration[1]
-          console.log("Ca a hit");
+          
+          let alphaSegment = geometry.getAlpha(x1,x2,y1,y2);
+
+          let xa = games[game].balls[iball].prevpos[0];
+          let xb = games[game].balls[iball].pos[0];
+          let ya = games[game].balls[iball].prevpos[1];
+          let yb = games[game].balls[iball].pos[1];
+
+          xa = xa*Math.cos(-alphaSegment) - ya*Math.sin(-alphaSegment);
+          ya = xa*Math.sin(-alphaSegment) + ya*Math.cos(-alphaSegment);
+
+          xb = xb*Math.cos(-alphaSegment) - yb*Math.sin(-alphaSegment);
+          yb = xb*Math.sin(-alphaSegment) + yb*Math.cos(-alphaSegment);
+
+          let alphaBall = geometry.getAlpha(xa,xb,ya,yb);
+          //console.log(alphaSegment);
+          console.log(alphaBall);
+          
+          let sommeAngle = -(alphaBall);
+
+          let vect = multiply([[Math.cos(sommeAngle), Math.sin(sommeAngle)], [-Math.sin(sommeAngle), Math.cos(sommeAngle)]], [[games[game].balls[iball].acceleration[0]],[games[game].balls[iball].acceleration[1]]])
+          games[game].balls[iball].acceleration[0] =vect[0][0]
+          games[game].balls[iball].acceleration[1] =vect[1][0]
+
+          //games[game].balls[iball].acceleration[0] = games[game].balls[iball].acceleration[0] * -Math.sin(Math.PI+alphaSegment+alphaBall) * accelerationRatio;
+          //games[game].balls[iball].acceleration[1] = games[game].balls[iball].acceleration[1] * -Math.cos(Math.PI+alphaSegment+alphaBall) * accelerationRatio;
+
+          console.log(JSON.stringify(games[game].balls[iball].acceleration));
       }
   }
 
   //temporaire{}
-  if (!geometry.isInside2(games[game].balls[iball].pos, games[game].arena)) {
+  /*if (!geometry.isInside2(games[game].balls[iball].pos, games[game].arena)) {
 
     let Ax = games[game].balls[iball].acceleration[0];
     let Ay = games[game].balls[iball].acceleration[1];
 
-    games[game].balls[iball].acceleration[0] = -Ax;
-    games[game].balls[iball].acceleration[1] = -Ay;
+    games[game].balls[iball].acceleration[0] = -Ax * accelerationRatio;
+    games[game].balls[iball].acceleration[1] = -Ay * accelerationRatio;
 
     console.log("Ca a hit (pour de faux)");
     console.log(JSON.stringify(games[game].balls[iball].acceleration));
     hashit = true;
-  }
+  }*/
 
   if (!hashit){
     if (!geometry.isInside2(games[game].balls[iball].pos, games[game].arena)) {
@@ -166,7 +209,8 @@ function loop(game,iball) {
   }
   
 
-  games[game].balls[iball].prevpos = games[game].balls[iball].pos;
+  games[game].balls[iball].prevpos[0] = games[game].balls[iball].pos[0];
+  games[game].balls[iball].prevpos[1] = games[game].balls[iball].pos[1];
   //console.log(games[game].balls[iball]);
   games[game].balls[iball].pos[0] += games[game].balls[iball].acceleration[0] * (delta/100);
   games[game].balls[iball].pos[1] += games[game].balls[iball].acceleration[1] * (delta/100);
@@ -251,7 +295,7 @@ const startGame = socket => {
 
   let balls = [];
   for (let i=0;i<2;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [80,80]});
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [20,20],lasthit:-1});
   }
 
   games[gameId] = {player:players,
@@ -310,7 +354,7 @@ const startGameExemple = socket => {
 
   let balls = [];
   for (let i=0;i<1;i++){
-    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [30 ,-10]});
+    balls.push({pos: [0,0], prevpos: [0,0], acceleration: [30 ,10],lasthit:-1});
   }
 
   games[gameId] = {player:players,
