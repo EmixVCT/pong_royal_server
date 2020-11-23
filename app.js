@@ -179,8 +179,12 @@ function loop(game,iball) {
 
           let vect = multiply([[Math.cos(sommeAngle), Math.sin(sommeAngle)], [-Math.sin(sommeAngle), Math.cos(sommeAngle)]], [[games[game].balls[iball].acceleration[0]],[games[game].balls[iball].acceleration[1]]])
 
-          games[game].balls[iball].acceleration[0] = vect[0][0] * accelerationRatio;
-          games[game].balls[iball].acceleration[1] = vect[1][0] * accelerationRatio;
+          while (Math.abs(vect[0][0])+Math.abs(vect[1][0]) <= 40){
+            vect[0][0] *= accelerationRatio;
+            vect[1][0] *= accelerationRatio;
+          }
+          games[game].balls[iball].acceleration[0] = vect[0][0];
+          games[game].balls[iball].acceleration[1] = vect[1][0];
      }
   }
 
