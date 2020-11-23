@@ -152,7 +152,7 @@ function loop(game,iball) {
       let x1 = games[game].arena[i][0], y1 = games[game].arena[i][1];
       let x2 = games[game].arena[(i+1)%games[game].position.length][0], y2 = games[game].arena[(i+1)%games[game].position.length][1];
       
-      let iPlayer = (i+3)%games[game].position.length;
+      let iPlayer = i;//(i+3)%games[game].position.length;
       /*
       if (games[game].position.length%2){
         iPlayer = (i + (Math.floor(games[game].position.length/2)))%games[game].position.length;
