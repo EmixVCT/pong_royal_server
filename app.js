@@ -175,11 +175,11 @@ function loop(game,iball) {
           //console.log(alphaSegment);
           console.log(alphaBall);
           
-          let sommeAngle = -(alphaBall);
+          let sommeAngle = -((alphaBall)%Math.PI*4);
 
-          let vect = multiply([[Math.cos(sommeAngle), Math.sin(sommeAngle)], [-Math.sin(sommeAngle), Math.cos(sommeAngle)]], [[games[game].balls[iball].acceleration[0]],[games[game].balls[iball].acceleration[1]]])
-          games[game].balls[iball].acceleration[0] =vect[0][0]
-          games[game].balls[iball].acceleration[1] =vect[1][0]
+          let vect = multiply([[-Math.cos(sommeAngle), -Math.sin(sommeAngle)], [Math.sin(sommeAngle), -Math.cos(sommeAngle)]], [[games[game].balls[iball].acceleration[0]],[games[game].balls[iball].acceleration[1]]])
+          games[game].balls[iball].acceleration[0] =-vect[0][0]
+          games[game].balls[iball].acceleration[1] =-vect[1][0]
 
           //games[game].balls[iball].acceleration[0] = games[game].balls[iball].acceleration[0] * -Math.sin(Math.PI+alphaSegment+alphaBall) * accelerationRatio;
           //games[game].balls[iball].acceleration[1] = games[game].balls[iball].acceleration[1] * -Math.cos(Math.PI+alphaSegment+alphaBall) * accelerationRatio;
